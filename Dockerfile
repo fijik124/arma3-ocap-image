@@ -1,10 +1,26 @@
-FROM ghcr.io/ptero-eggs/games:arma3
+FROM debian:bookworm-slim
 
-USER root
+LABEL author="SPARTANS CZ/SK"
 
-# Obnovenie balíčkov a oprava prípadných archívnych repozitárov pre Debian Bullseye
-RUN apt-get update --fix-missing && \
-    apt-get install -y --no-install-recommends libcurl4 libstdc++6 libgcc-s1 || true && \
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Inštalácia závislostí pre Arma 3 a OCAP (vrátane GLIBC 2.36)
+RUN dpkg --add-architecture i386 && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
+        lib32gcc-s1 \
+        lib32stdc++6 \
+        libstdc++6 \
+        libcurl4 \
+        libgcc-s1 \
+        tini && \
+    useradd -m -d /home/container -s /bin/bash container && \
     rm -rf /var/lib/apt/lists/*
 
 USER container
+ENV HOME=/home/container
+WORKDIR /home/container
+
+ENTRYPOINT ["/usr/bin/tini", "-g", "--"]
